@@ -1,0 +1,14 @@
+{
+  "account_sid": {
+	"label": "Account SID",
+	"type": "String",
+	"required": true,
+	"help": "Please provide your Twilio Account SID."
+  },
+  "auth_token": {
+	"label": "Auth Token",
+	"type": "String",
+	"required": true,
+	"help": "Please provide your Twilio Auth Token."
+  }
+}
