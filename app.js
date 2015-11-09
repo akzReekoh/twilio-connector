@@ -3,23 +3,46 @@
 var platform = require('./platform'),
     _ = require('lodash'),
     isJSON = require('is-json'),
-    twilioClient = require('twilio');
+    twilioClient = require('twilio'),
+    config;
 
 /*
  * Listen for the data event.
  */
 platform.on('data', function (data) {
     if(isJSON(data, true)) {
+        var to, from, body;
+
         if (_.isEmpty(data.to))
-            return platform.handleException(new Error('Kindly specify SMS recipient.'));
+            to = config.default_receiver;
+        else
+            to = data.to;
 
         if (_.isEmpty(data.from))
-            return platform.handleException(new Error('Kindly specify SMS sender.'));
+            from = config.default_sender;
+        else
+            from = data.from;
 
         if (_.isEmpty(data.body))
-            return platform.handleException(new Error('Kindly provide SMS message body.'));
+            body = config.body;
+        else
+            body = data.body;
 
-        twilioClient.sendMessage(data, function (error, responseData) {
+        delete data.to;
+        delete data.from;
+        delete data.body;
+
+        var params = {
+            to : to,
+            from : from
+        };
+
+        if(_.isEmpty(body))
+            params.body = JSON.stringify(data, null, 4);
+        else
+            params.body = body + '\n\n' + JSON.stringify(data, null, 4);
+
+        twilioClient.sendMessage(params, function (error, responseData) {
             if (error) {
                 console.error(error);
                 platform.handleException(error);
@@ -27,7 +50,7 @@ platform.on('data', function (data) {
             else {
                 platform.log(JSON.stringify({
                     title: 'Twilio SMS Sent',
-                    data: data
+                    data: params
                 }));
             }
         });
@@ -40,19 +63,7 @@ platform.on('data', function (data) {
  * Event to listen to in order to gracefully release all resources bound to this service.
  */
 platform.on('close', function () {
-	var domain = require('domain');
-	var d = domain.create();
-
-	d.on('error', function(error) {
-		console.error(error);
-		platform.handleException(error);
-		platform.notifyClose();
-	});
-
-	d.run(function() {
-		// TODO: Release all resources and close connections etc.
-		platform.notifyClose(); // Notify the platform that resources have been released.
-	});
+    platform.notifyClose();
 });
 
 /*
@@ -60,6 +71,7 @@ platform.on('close', function () {
  */
 platform.once('ready', function (options) {
     twilioClient = require('twilio')(options.account_sid, options.auth_token);
+    config = options;
 
 	platform.notifyReady();
 });

@@ -10,5 +10,23 @@
 	"type": "String",
 	"required": true,
 	"help": "Please provide your Twilio Auth Token."
+  },
+  "default_sender":{
+    "label": "Default Sender",
+    "type": "String",
+    "required": true,
+    "help": "Please provide your SMS/Notification's default sender."
+  },
+  "default_receiver":{
+    "label": "Default Receiver",
+    "type": "String",
+    "required": true,
+    "help": "Please provide your SMS/Notification's default receiver."
+  },
+  "default_text":{
+    "label": "Default Text",
+    "type": "String",
+    "required": true,
+    "help": "Please provide your SMS/Notification's default text."
   }
 }
