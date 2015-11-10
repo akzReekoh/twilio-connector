@@ -73,5 +73,6 @@ platform.once('ready', function (options) {
     twilioClient = require('twilio')(options.account_sid, options.auth_token);
     config = options;
 
+    platform.log('Twilio Connector initialized.');
 	platform.notifyReady();
 });
