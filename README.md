@@ -15,4 +15,9 @@ To configure this plugin a Twilio account is needed in order to provide the foll
 1. Account SID - The Twilio Account SID to use
 2. Auth Token -  The corresponding Auth Token of the Twilio Account SID
 
+Other parameters:
+1. Default Sender - The default sender(number) of the SMS/Notification.
+2. Default Receiver - The default receiver(number) of the SMS/Notification.
+3. Default Text - The default text/body of the SMS/Notification.
+
 These parameters are then injected to the plugin from the platform.
