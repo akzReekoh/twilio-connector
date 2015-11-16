@@ -1,17 +1,23 @@
 'use strict';
 
-var platform     = require('./platform'),
-	_            = require('lodash'),
-	isJSON       = require('is-json'),
-	twilioClient = require('twilio'),
-	config;
+var platform = require('./platform'),
+    _ = require('lodash'),
+    twilioClient = require('twilio'),
+    config;
 
 /*
  * Listen for the data event.
  */
 platform.on('data', function (data) {
-	if (isJSON(data, true)) {
-		var to, from, body;
+    var domain = require('domain'),
+        d = domain.create();
+
+    d.once('error', function(error){
+        platform.handleException(new Error('Invalid data received. ' + data));
+    });
+
+    d.run(function(){
+        var to, from, body;
 
 		if (_.isEmpty(data.to))
 			to = config.default_receiver;
@@ -42,21 +48,20 @@ platform.on('data', function (data) {
 		else
 			params.body = body + '\n\n' + JSON.stringify(data, null, 4);
 
-		twilioClient.sendMessage(params, function (error, responseData) {
-			if (error) {
-				console.error(error);
-				platform.handleException(error);
-			}
-			else {
-				platform.log(JSON.stringify({
-					title: 'Twilio SMS Sent',
-					data: params
-				}));
-			}
-		});
-	}
-	else
-		platform.handleException(new Error('Invalid data received. ' + data));
+        twilioClient.sendMessage(params, function (error, responseData) {
+            if (error) {
+                console.error(error);
+                platform.handleException(error);
+            }
+            else {
+                platform.log(JSON.stringify({
+                    title: 'Twilio SMS Sent',
+                    data: params
+                }));
+            }
+            d.exit();
+        });
+    });
 });
 
 /*
