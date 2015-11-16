@@ -12,7 +12,7 @@ platform.on('data', function (data) {
     var domain = require('domain'),
         d = domain.create();
 
-    d.on('error', function(error){
+    d.once('error', function(error){
         platform.handleException(new Error('Invalid data received. ' + data));
     });
 
