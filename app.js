@@ -2,7 +2,6 @@
 
 var platform = require('./platform'),
     _ = require('lodash'),
-    isJSON = require('is-json'),
     twilioClient = require('twilio'),
     config;
 
@@ -10,7 +9,14 @@ var platform = require('./platform'),
  * Listen for the data event.
  */
 platform.on('data', function (data) {
-    if(isJSON(data, true)) {
+    var domain = require('domain'),
+        d = domain.create();
+
+    d.on('error', function(error){
+        platform.handleException(new Error('Invalid data received. ' + data));
+    });
+
+    d.run(function(){
         var to, from, body;
 
         if (_.isEmpty(data.to))
@@ -54,9 +60,8 @@ platform.on('data', function (data) {
                 }));
             }
         });
-    }
-    else
-        platform.handleException(new Error('Invalid data received. ' + data));
+        d.exit();
+    });
 });
 
 /*

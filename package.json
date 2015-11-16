@@ -12,7 +12,6 @@
     "url": "https://github.com/Reekoh/twilio-connector"
   },
   "dependencies": {
-    "is-json": "^1.2.5",
     "lodash": "^3.10.1",
     "twilio": "^2.5.2"
   },
