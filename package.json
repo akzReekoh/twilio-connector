@@ -1,7 +1,7 @@
 {
   "name": "twilio-connector",
   "description": "Twilio Connector Plugin project for the Reekoh IoT Platform.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Reekoh, Inc.",
   "main": "app.js",
   "scripts": {
