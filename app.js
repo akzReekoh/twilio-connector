@@ -1,35 +1,29 @@
 'use strict';
 
-var _            = require('lodash'),
-	domain       = require('domain'),
-	platform     = require('./platform'),
-	twilioClient = require('twilio'),
+var isEmpty       = require('lodash.isempty'),
+	isPlainObject = require('lodash.isplainobject'),
+	platform      = require('./platform'),
+	twilioClient  = require('twilio'),
 	config;
 
 /*
  * Listen for the data event.
  */
 platform.on('data', function (data) {
-	var d = domain.create();
-
-	d.once('error', function (error) {
-		platform.handleException(error);
-	});
-
-	d.run(function () {
+	if (isPlainObject(data)) {
 		var to, from, body;
 
-		if (_.isEmpty(data.to))
+		if (isEmpty(data.to))
 			to = config.default_receiver;
 		else
 			to = data.to;
 
-		if (_.isEmpty(data.from))
+		if (isEmpty(data.from))
 			from = config.default_sender;
 		else
 			from = data.from;
 
-		if (_.isEmpty(data.body))
+		if (isEmpty(data.body))
 			body = config.body;
 		else
 			body = data.body;
@@ -43,7 +37,7 @@ platform.on('data', function (data) {
 			from: from
 		};
 
-		if (_.isEmpty(body))
+		if (isEmpty(body))
 			params.body = JSON.stringify(data, null, 4);
 		else
 			params.body = body + '\n\n' + JSON.stringify(data, null, 4);
@@ -59,10 +53,10 @@ platform.on('data', function (data) {
 					data: params
 				}));
 			}
-
-			d.exit();
 		});
-	});
+	}
+	else
+		platform.handleException(new Error('Invalid data received. Must be a valid JSON Object. Data ' + data));
 });
 
 /*
