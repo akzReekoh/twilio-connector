@@ -1,35 +1,29 @@
 'use strict';
 
-var platform = require('./platform'),
-    _ = require('lodash'),
-    twilioClient = require('twilio'),
-    config;
+var isEmpty       = require('lodash.isempty'),
+	isPlainObject = require('lodash.isplainobject'),
+	platform      = require('./platform'),
+	twilioClient  = require('twilio'),
+	config;
 
 /*
  * Listen for the data event.
  */
 platform.on('data', function (data) {
-    var domain = require('domain'),
-        d = domain.create();
+	if (isPlainObject(data)) {
+		var to, from, body;
 
-    d.once('error', function(error){
-        platform.handleException(new Error('Invalid data received. ' + data));
-    });
-
-    d.run(function(){
-        var to, from, body;
-
-		if (_.isEmpty(data.to))
+		if (isEmpty(data.to))
 			to = config.default_receiver;
 		else
 			to = data.to;
 
-		if (_.isEmpty(data.from))
+		if (isEmpty(data.from))
 			from = config.default_sender;
 		else
 			from = data.from;
 
-		if (_.isEmpty(data.body))
+		if (isEmpty(data.body))
 			body = config.body;
 		else
 			body = data.body;
@@ -43,25 +37,26 @@ platform.on('data', function (data) {
 			from: from
 		};
 
-		if (_.isEmpty(body))
+		if (isEmpty(body))
 			params.body = JSON.stringify(data, null, 4);
 		else
 			params.body = body + '\n\n' + JSON.stringify(data, null, 4);
 
-        twilioClient.sendMessage(params, function (error, responseData) {
-            if (error) {
-                console.error(error);
-                platform.handleException(error);
-            }
-            else {
-                platform.log(JSON.stringify({
-                    title: 'Twilio SMS Sent',
-                    data: params
-                }));
-            }
-            d.exit();
-        });
-    });
+		twilioClient.sendMessage(params, function (error) {
+			if (error) {
+				console.error(error);
+				platform.handleException(error);
+			}
+			else {
+				platform.log(JSON.stringify({
+					title: 'Twilio SMS Sent',
+					data: params
+				}));
+			}
+		});
+	}
+	else
+		platform.handleException(new Error('Invalid data received. Must be a valid JSON Object. Data ' + data));
 });
 
 /*
