@@ -7,7 +7,7 @@
   },
   "auth_token": {
 	"label": "Auth Token",
-	"type": "String",
+	"type": "Password",
 	"required": true,
 	"help": "Please provide your Twilio Auth Token."
   },
