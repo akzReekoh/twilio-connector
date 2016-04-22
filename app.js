@@ -8,7 +8,7 @@ var isEmpty       = require('lodash.isempty'),
 	twilioClient  = require('twilio'),
 	config;
 
-let sendData = (data) => {
+let sendData = (data, callback) => {
 	var to, from, body;
 
 	if (isEmpty(data.to))
@@ -41,28 +41,36 @@ let sendData = (data) => {
 		params.body = body + '\n\n' + JSON.stringify(data, null, 4);
 
 	twilioClient.sendMessage(params, function (error) {
-		if (error) {
-			console.error(error);
-			platform.handleException(error);
-		}
-		else {
+		if (!error) {
 			platform.log(JSON.stringify({
 				title: 'Twilio SMS Sent',
 				data: params
 			}));
 		}
+
+        callback(error);
 	});
 };
 
 platform.on('data', function (data) {
-	if (isPlainObject(data)) {
-		sendData(data);
-	}
-	else if(isArray(data)){
-		async.each(data, (datum) => {
-			sendData(datum);
-		});
-	}
+    if(isPlainObject(data)){
+        sendData(data, (error) => {
+            if(error) {
+                console.error(error);
+                platform.handleException(error);
+            }
+        });
+    }
+    else if(isArray(data)){
+        async.each(data, (datum, done) => {
+            sendData(datum, done);
+        }, (error) => {
+            if(error) {
+                console.error(error);
+                platform.handleException(error);
+            }
+        });
+    }
 	else
 		platform.handleException(new Error('Invalid data received. Must be a valid Array/JSON Object. Data ' + data));
 });
