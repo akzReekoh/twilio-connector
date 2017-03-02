@@ -1,32 +1,37 @@
 {
-  "account_sid": {
+  "accountSid": {
 	"label": "Account SID",
 	"type": "String",
 	"required": true,
-	"help": "Please provide your Twilio Account SID."
+	"help": "Please provide your Twilio Account SID.",
+    "maxLength": 100
   },
-  "auth_token": {
+  "authToken": {
 	"label": "Auth Token",
 	"type": "Password",
 	"required": true,
-	"help": "Please provide your Twilio Auth Token."
+	"help": "Please provide your Twilio Auth Token.",
+    "maxLength": 100
   },
-  "default_sender":{
+  "defaultSender":{
     "label": "Default Sender",
     "type": "String",
     "required": true,
-    "help": "Please provide your SMS/Notification's default sender."
+    "help": "Please provide your SMS/Notification's default sender.",
+    "maxLength": 50
   },
-  "default_receiver":{
+  "defaultReceiver":{
     "label": "Default Receiver",
     "type": "String",
     "required": true,
-    "help": "Please provide your SMS/Notification's default receiver."
+    "help": "Please provide your SMS/Notification's default receiver.",
+    "maxLength": 50
   },
-  "default_text":{
+  "defaultText":{
     "label": "Default Text",
     "type": "String",
     "required": true,
-    "help": "Please provide your SMS/Notification's default text."
+    "help": "Please provide your SMS/Notification's default text.",
+    "maxLength": 100
   }
 }

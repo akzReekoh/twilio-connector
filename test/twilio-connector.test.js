@@ -1,83 +1,62 @@
-'use strict';
+'use strict'
 
-const ACCOUNT_SID = 'ACa172f64f41e3369893dcc30dd1ef01f9',
-    AUTH_TOKEN = 'ede3899ad202e90771567a446850ef8b';
+const amqp = require('amqplib')
 
-var cp     = require('child_process'),
-	assert = require('assert'),
-	connector;
+const ACCOUNT_SID = 'ACa172f64f41e3369893dcc30dd1ef01f9'
+const AUTH_TOKEN = 'ede3899ad202e90771567a446850ef8b'
 
-describe('Connector', function () {
-	this.slow(5000);
+let _channel = null
+let _conn = null
+let app = null
 
-	after('terminate child process', function (done) {
-		this.timeout(7000);
+describe('Twilio Connector Test', () => {
+  before('init', () => {
+    process.env.ACCOUNT = 'adinglasan'
+    process.env.CONFIG = JSON.stringify({
+      accountSid: ACCOUNT_SID,
+      authToken: AUTH_TOKEN
+    })
+    process.env.INPUT_PIPE = 'ip.twilio'
+    process.env.LOGGERS = 'logger1, logger2'
+    process.env.EXCEPTION_LOGGERS = 'ex.logger1, ex.logger2'
+    process.env.BROKER = 'amqp://guest:guest@127.0.0.1/'
 
-        setTimeout(function(){
-            connector.kill('SIGKILL');
-			done();
-        }, 5000);
-	});
+    amqp.connect(process.env.BROKER)
+      .then((conn) => {
+        _conn = conn
+        return conn.createChannel()
+      }).then((channel) => {
+      _channel = channel
+    }).catch((err) => {
+      console.log(err)
+    })
+  })
 
-	describe('#spawn', function () {
-		it('should spawn a child process', function () {
-			assert.ok(connector = cp.fork(process.cwd()), 'Child process not spawned.');
-		});
-	});
+  after('close connection', function (done) {
+    _conn.close()
+    done()
+  })
 
-	describe('#handShake', function () {
-		it('should notify the parent process when ready within 5 seconds', function (done) {
-			this.timeout(5000);
+  describe('#start', function () {
+    it('should start the app', function (done) {
+      this.timeout(10000)
+      app = require('../app')
+      app.once('init', done)
+    })
+  })
 
-			connector.on('message', function (message) {
-				if (message.type === 'ready')
-					done();
-			});
+  describe('#data', () => {
+    it('should send data to third party client', function (done) {
+      this.timeout(15000)
 
-			connector.send({
-				type: 'ready',
-				data: {
-					options: {
-						account_sid: ACCOUNT_SID,
-						auth_token: AUTH_TOKEN
-					}
-				}
-			}, function (error) {
-				assert.ifError(error);
-			});
-		});
-	});
+      let data = {
+        to: '+12016694769',
+        from: '+12016694769',
+        body: 'This is a test SMS message from twilio-connector plugin'
+      }
 
-	describe('#data', function (done) {
-		it('should process the JSON data', function () {
-			connector.send({
-				type: 'data',
-				data: {
-					to: '+12016694769',
-					from: '+12016694769',
-					body: 'This is a test SMS message from twilio-connector plugin'
-				}
-			}, done);
-		});
-	});
-
-	describe('#data', function (done) {
-		it('should process the Array data', function () {
-			connector.send({
-				type: 'data',
-				data: [
-					{
-						to: '+12016694769',
-						from: '+12016694769',
-						body: 'This is a test SMS message from twilio-connector plugin'
-					},
-					{
-						to: '+12016694769',
-						from: '+12016694769',
-						body: 'This is a test SMS message from twilio-connector plugin'
-					}
-				]
-			}, done);
-		});
-	});
-});
+      _channel.sendToQueue('ip.twilio', new Buffer(JSON.stringify(data)))
+      setTimeout(done, 10000)
+    })
+  })
+})

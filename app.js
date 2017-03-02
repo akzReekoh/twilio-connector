@@ -1,88 +1,103 @@
-'use strict';
+'use strict'
 
-var isEmpty       = require('lodash.isempty'),
-	isArray = require('lodash.isarray'),
-	async = require('async'),
-	isPlainObject = require('lodash.isplainobject'),
-	platform      = require('./platform'),
-	twilioClient  = require('twilio'),
-	config;
+let reekoh = require('reekoh')
+let _plugin = new reekoh.plugins.Connector()
+let async = require('async')
+let isArray = require('lodash.isarray')
+let isEmpty = require('lodash.isempty')
+let isPlainObject = require('lodash.isplainobject')
+let isError = require('lodash.iserror')
+let twilioClient = require('twilio')
 
 let sendData = (data, callback) => {
-	var to, from, body;
+  let to = null
+  let from = null
+  let body = null
 
-	if (isEmpty(data.to))
-		to = config.default_receiver;
-	else
-		to = data.to;
+  if (isEmpty(data.to)) {
+    to = _plugin.config.defaultReceiver
+  } else {
+    to = data.to
+  }
 
-	if (isEmpty(data.from))
-		from = config.default_sender;
-	else
-		from = data.from;
+  if (isEmpty(data.from)) { from = _plugin.config.defaultSender } else {
+    from = data.from
+  }
 
-	if (isEmpty(data.body))
-		body = config.body;
-	else
-		body = data.body;
+  if (isEmpty(data.body)) {
+    body = _plugin.config.body
+  } else {
+    body = data.body
+  }
 
-	delete data.to;
-	delete data.from;
-	delete data.body;
+  delete data.to
+  delete data.from
+  delete data.body
 
-	var params = {
-		to: to,
-		from: from
-	};
+  let params = {
+    to: to,
+    from: from
+  }
 
-	if (isEmpty(body))
-		params.body = JSON.stringify(data, null, 4);
-	else
-		params.body = body + '\n\n' + JSON.stringify(data, null, 4);
+  if (isEmpty(body)) { params.body = JSON.stringify(data, null, 4) } else {
+    params.body = body + '\n\n' + JSON.stringify(data, null, 4)
+  }
 
-	twilioClient.sendMessage(params, function (error) {
-		if (!error) {
-			platform.log(JSON.stringify({
-				title: 'Twilio SMS Sent',
-				data: params
-			}));
-		}
-
-        callback(error);
-	});
-};
-
-platform.on('data', function (data) {
-    if(isPlainObject(data)){
-        sendData(data, (error) => {
-            if(error) {
-                console.error(error);
-                platform.handleException(error);
-            }
-        });
+  twilioClient.sendMessage(params, function (error) {
+    if (!error) {
+      _plugin.log(JSON.stringify({
+        title: 'Twilio SMS Sent',
+        data: params
+      }))
     }
-    else if(isArray(data)){
-        async.each(data, (datum, done) => {
-            sendData(datum, done);
-        }, (error) => {
-            if(error) {
-                console.error(error);
-                platform.handleException(error);
-            }
-        });
-    }
-	else
-		platform.handleException(new Error('Invalid data received. Must be a valid Array/JSON Object. Data ' + data));
-});
 
-platform.on('close', function () {
-	platform.notifyClose();
-});
+    callback(error)
+  })
+}
 
-platform.once('ready', function (options) {
-	twilioClient = require('twilio')(options.account_sid, options.auth_token);
-	config = options;
+/**
+ * Emitted when device data is received.
+ * This is the event to listen to in order to get real-time data feed from the connected devices.
+ * @param {object} data The data coming from the device represented as JSON Object.
+ */
+_plugin.on('data', (data) => {
+  if (isPlainObject(data)) {
+    sendData(data, (error) => {
+      if (error) {
+        console.error(error)
 
-	platform.log('Twilio Connector Initialized.');
-	platform.notifyReady();
-});
+        if (!isError(error)) {
+          error = new Error(error)
+        }
+
+        _plugin.logException(error)
+      }
+    })
+  } else if (isArray(data)) {
+    async.each(data, (datum, done) => {
+      sendData(datum, done)
+    }, (error) => {
+      if (error) {
+        console.error(error)
+
+        if (!isError(error)) {
+          error = new Error(error)
+        }
+
+        _plugin.logException(error)
+      }
+    })
+  } else { _plugin.logException(new Error('Invalid data received. Must be a valid Array/JSON Object. Data ' + data)) }
+})
+
+/**
+ * Emitted when the platform bootstraps the plugin. The plugin should listen once and execute its init process.
+ */
+_plugin.once('ready', () => {
+  twilioClient = require('twilio')(_plugin.config.accountSid, _plugin.config.authToken)
+
+  _plugin.log('Twilio Connector has been initialized.')
+  _plugin.emit('init')
+})
+
+module.exports = _plugin
